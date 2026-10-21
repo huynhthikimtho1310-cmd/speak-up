@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f6d72">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Speak Up">
+<title>Speak Up Express</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Be+Vietnam+Pro:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: travel ticket. Route of 6 stops on top; each stop = 4 tabs (vocab, grammar, dialogue, review) inside one ticket card */
+:root{
+  --bg:#eef3f4; --paper:#ffffff; --ink:#10282e; --muted:#5b7177; --line:#cddadd;
+  --accent:#0f6d72; --accent-soft:#d6ecec; --signal:#f5b700; --signal-soft:#fff3cc; --good:#1f8a4c; --good-bg:#e1f3e8; --bad:#c23b2a; --bad-bg:#fbe5e1;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b171a; --paper:#13252a; --ink:#e6f0f1; --muted:#93a9ae; --line:#264046;
+  --accent:#5cc3c8; --accent-soft:#163a3e; --signal:#f5c533; --signal-soft:#3a3214; --good:#5fd08f; --good-bg:#14352a; --bad:#ff8a78; --bad-bg:#3d1d19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b171a; --paper:#13252a; --ink:#e6f0f1; --muted:#93a9ae; --line:#264046;
+  --accent:#5cc3c8; --accent-soft:#163a3e; --signal:#f5c533; --signal-soft:#3a3214; --good:#5fd08f; --good-bg:#14352a; --bad:#ff8a78; --bad-bg:#3d1d19; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,6vw,40px);line-height:1;margin:0;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:6px 0 0;font-size:14px}
+.stats{display:flex;gap:8px;font-family:var(--f-mono);font-size:13px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip b{color:var(--accent)}
+.sound{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sel{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);min-width:0}
+.sel select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:5px 8px;max-width:220px}
+.sndmsg{margin:-6px 0 0;font-size:13.5px;background:var(--bad-bg);color:var(--ink);border-radius:10px;padding:8px 12px}
+.route{display:grid;grid-template-columns:repeat(var(--n,6),1fr);gap:4px}
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.lv{font:inherit;text-align:left;background:var(--paper);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.lv:hover{border-color:var(--accent)}
+.lv:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lv.on{border-color:var(--accent);background:var(--accent-soft)}
+.lv-n{font-family:var(--f-display);font-weight:800;font-size:26px;line-height:1;color:var(--accent)}
+.lv-t{font-weight:700;font-size:14px}
+.lv-d{font-size:12px;color:var(--muted);line-height:1.35}
+.lv-p{height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.lv-p i{display:block;height:100%;background:var(--signal)}
+.lv-c{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:480px){.lv-d{display:none}.lv{padding:10px}.lv-n{font-size:22px}}
+.stop{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;padding:4px 0;border-radius:8px}
+.stop:focus-visible,.btn:focus-visible,.opt:focus-visible,.tab:focus-visible,.card button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{width:34px;height:34px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-size:16px;background:var(--paper)}
+.stop.on .dot{border:2px solid var(--accent);background:var(--accent-soft)}
+.stop.on{color:var(--ink);font-weight:700}
+.stop.done .dot{border:2px solid var(--good);background:var(--good-bg)}
+.stop.stamped .dot{border-color:var(--signal);background:var(--signal);color:#10282e}
+.ticket{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.t-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 20px;background:var(--accent);color:var(--paper);flex-wrap:wrap}
+.t-head .place{font-family:var(--f-display);font-weight:800;font-size:20px}
+.t-head .code{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;opacity:.85}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-size:13px;font-weight:500;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:12px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab small{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--signal)}
+.bar{height:4px;background:var(--accent-soft)}
+.bar i{display:block;height:100%;background:var(--signal);transition:width .35s}
+.t-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.ctx{font-size:13.5px;color:var(--muted);margin:0}
+.ctx b{color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:700}
+.btn.sm{padding:5px 10px;font-size:13px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+/* vocab */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.card{border:1.5px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card.learned{border-color:var(--good);background:var(--good-bg)}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card .w{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.15;min-width:0}
+.card .pos{font-family:var(--f-mono);font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:2px 6px;white-space:nowrap}
+.card .ipa{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.card .mean{font-weight:700}
+.card .reveal{font:inherit;font-size:14px;border:1px dashed var(--line);background:none;color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;text-align:left}
+.card .ex{font-size:14px;color:var(--muted);font-style:italic;margin:0}
+.card .note{font-size:12.5px;color:var(--accent);margin:0}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.card .acts button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:4px 9px;cursor:pointer}
+.card.learned .acts .mark{background:var(--good);border-color:var(--good);color:var(--paper)}
+/* grammar */
+.rule h2{font-family:var(--f-display);font-weight:800;font-size:clamp(20px,4.5vw,26px);line-height:1.2;margin:0 0 4px;text-wrap:balance}
+.rule ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.rule li{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.formula{display:inline-block;font-family:var(--f-mono);font-size:13.5px;background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:3px 8px;margin:2px 0;word-break:break-word}
+.rule .eg{display:block;font-size:14.5px;color:var(--muted);margin-top:3px}
+.rule .eg b{color:var(--ink)}
+.mistake{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mistake div{border-radius:10px;padding:10px 12px;font-size:14.5px;min-width:0}
+.mistake .x{background:var(--bad-bg)} .mistake .v{background:var(--good-bg)}
+.mistake span{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;margin-bottom:2px}
+.mistake .x span{color:var(--bad)} .mistake .v span{color:var(--good)}
+.ex-list{display:flex;flex-direction:column;gap:14px;border-top:1px dashed var(--line);padding-top:14px}
+.ex-item p{margin:0 0 8px;font-size:17px;font-weight:500}
+.blank{display:inline-block;min-width:64px;border-bottom:2px solid var(--signal);text-align:center;padding:0 4px;color:var(--accent);font-weight:700}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{font:inherit;font-size:15px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:6px 14px;cursor:pointer}
+.chips button:hover:not(:disabled){border-color:var(--accent)}
+.chips button.ok{border-color:var(--good);background:var(--good-bg)}
+.chips button.no{border-color:var(--bad);background:var(--bad-bg)}
+.chips button:disabled{cursor:default}
+.why{font-size:13.5px;color:var(--muted);margin-top:6px}
+/* dialogue */
+.bubble{display:flex;gap:12px;align-items:flex-start}
+.who{flex:none;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:22px}
+.say{min-width:0;flex:1}
+.say .name{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.say .en{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,4.6vw,26px);line-height:1.25;margin:2px 0 4px;text-wrap:balance}
+.say .vi{font-size:14px;color:var(--muted);margin:0}
+.vw{border-bottom:2px dotted var(--signal);cursor:help}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.q{font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 -6px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .1s}
+.opt:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}
+.opt .k{flex:none;font-family:var(--f-mono);font-size:12px;width:24px;height:24px;border-radius:6px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;margin-top:1px}
+.opt .tx{min-width:0}
+.opt .why{display:block}
+.opt.ok{border-color:var(--good);background:var(--good-bg)}
+.opt.ok .k{background:var(--good);color:var(--paper)}
+.opt.no{border-color:var(--bad);background:var(--bad-bg)}
+.opt.no .k{background:var(--bad);color:var(--paper)}
+.opt:disabled{cursor:default}
+.feedback{border-left:4px solid var(--signal);background:var(--signal-soft);padding:12px 14px;border-radius:0 10px 10px 0;font-size:14.5px}
+.feedback .tip{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--accent);display:block;margin-bottom:2px}
+.result{text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0}
+.stamp{width:140px;height:140px;border-radius:50%;border:4px double var(--signal);display:grid;place-items:center;transform:rotate(-12deg);font-family:var(--f-display);font-weight:800;color:var(--signal);text-transform:uppercase;line-height:1.05;font-size:15px;padding:16px}
+.stamp.miss{border-color:var(--muted);color:var(--muted)}
+.result h2{font-family:var(--f-display);font-size:26px;margin:0}
+.phrasebook{width:100%;text-align:left;border-top:1px dashed var(--line);padding-top:14px}
+.phrasebook h3{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.phrasebook ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.phrasebook li{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
+.phrasebook .en2{font-weight:700}
+.phrasebook .vi2{color:var(--muted);font-size:14px}
+.big-q{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,5vw,30px);margin:0;text-wrap:balance}
+.foot{font-size:13px;color:var(--muted);text-align:center}
+.foot button{background:none;border:0;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
+@media (max-width:480px){.stop span.lbl{display:none}.t-body{padding:16px}.mistake{grid-template-columns:1fr}.tab{font-size:12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Speak Up <span>Express</span></h1>
+      <p class="sub">Lộ trình A2 → B1 → B+ · 14 điểm dừng · 112 từ vựng · 14 bài ngữ pháp · 56 tình huống</p>
+    </div>
+    <div class="stats">
+      <span class="chip">Điểm <b id="score">0</b></span>
+      <span class="chip">Chuỗi <b id="streak">0</b>🔥</span>
+      <span class="chip">Từ đã thuộc <b id="words">0</b>/112</span>
+      <span class="chip">Tem <b id="stamps">0</b>/14</span>
+    </div>
+  </header>
+
+  <div class="sound">
+    <button class="btn sm" id="sndtest" type="button">🔊 Kiểm tra âm thanh</button>
+    <label class="sel">Giọng <select id="voice"><option>Đang tải giọng…</option></select></label>
+    <label class="sel">Tốc độ <select id="rate"><option value="0.8">Chậm</option><option value="1">Vừa</option><option value="1.15">Nhanh</option></select></label>
+  </div>
+  <p class="sndmsg" id="sndmsg" role="status" hidden></p>
+  <nav class="levels" id="levels" aria-label="Cấp độ"></nav>
+  <nav class="route" id="route" aria-label="Điểm dừng"></nav>
+
+  <section class="ticket">
+    <div class="t-head"><span class="place" id="place"></span><span class="code" id="code"></span></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="bar"><i id="bar" style="width:0"></i></div>
+    <div class="t-body" id="body" aria-live="polite"></div>
+  </section>
+
+  <p class="foot">Nên đạt ít nhất 3/4 tem ở mỗi cấp trước khi lên cấp tiếp theo. Lộ trình gợi ý mỗi điểm dừng: học từ → học ngữ pháp → luyện hội thoại → kiểm tra từ. Bấm 🔊 và đọc to theo. · <button id="reset" type="button">Chơi lại từ đầu</button></p>
+</div>
+
+<script>
+/* ===== DỮ LIỆU ===== v: [từ, phiên âm, loại từ, nghĩa, ví dụ, ghi chú] */
+const A2=[
+{id:"AIR",place:"Sân bay",icon:"✈️",who:"🧑‍✈️",name:"Check-in staff",ctx:"Bạn đang làm thủ tục tại quầy check-in.",
+ v:[["passport","/ˈpæs.pɔːrt/","n.","hộ chiếu","May I see your passport, please?"],
+    ["check in","/tʃek ɪn/","phr. v.","làm thủ tục (sân bay, khách sạn)","I need to check in two bags."],
+    ["suitcase","/ˈsuːt.keɪs/","n.","va li","Just this one suitcase."],
+    ["prefer","/prɪˈfɜːr/","v.","thích hơn","I prefer a window seat."],
+    ["aisle","/aɪl/","n.","lối đi giữa các hàng ghế","Could I have an aisle seat?","Chữ “s” câm, đọc giống “I'll”."],
+    ["seat","/siːt/","n.","ghế ngồi","Is this seat free?","Đừng nhầm với “sit” /sɪt/ (ngồi)."],
+    ["boarding","/ˈbɔːr.dɪŋ/","n.","việc lên máy bay","Boarding starts at 9:40."],
+    ["gate","/ɡeɪt/","n.","cổng ra máy bay","Which gate is it?"]],
+ g:{t:"Câu hỏi lịch sự: May I / Could you / Would you prefer",intro:"Ở sân bay, nhân viên hầu như luôn hỏi bằng 3 mẫu câu này. Hiểu được chúng là bạn trả lời được ngay.",
+  p:[["May I + V (nguyên mẫu)?","Xin phép được làm gì.","May I <b>see</b> your passport?"],
+     ["Could you + V (nguyên mẫu), please?","Nhờ người khác làm gì. Lịch sự hơn “Can you”.","Could you <b>repeat</b> that, please?"],
+     ["Would you prefer A or B?","Hỏi chọn A hay B. Trả lời: <b>A, please.</b> hoặc <b>I'd prefer A.</b>","Would you prefer a window or an aisle seat? → Window, please."]],
+  m:["May I see your ticket? → Yes, I may.","May I see your ticket? → Sure, here you are."],
+  ex:[["___ I use your pen?",["May","Do","Am"],0,"Xin phép → May I + V."],
+      ["Could you ___ that, please?",["repeat","repeating","to repeat"],0,"Sau could/can/may luôn là V nguyên mẫu, không thêm -ing hay to."],
+      ["“Would you prefer tea or coffee?” – “___”",["Coffee, please.","Yes, please.","I prefer yes."],0,"Câu hỏi A or B → chọn A hoặc B, không trả lời yes/no."]]},
+ qs:[
+  {en:"Good morning. May I see your passport, please?",vi:"Chào buổi sáng. Cho tôi xem hộ chiếu của bạn được không?",o:[
+   ["Sure, here you are.",1,"Câu chuẩn khi đưa đồ cho ai đó."],["Yes, I may.",0,"“May I…?” là họ xin phép, không trả lời “I may”."],["Passport is me.",0,"Sai ngữ pháp, rất khó hiểu."]],tip:"Here you are / Here it is = Của bạn đây."},
+  {en:"Do you have any bags to check in?",vi:"Bạn có hành lý ký gửi không?",o:[
+   ["Just this one suitcase.",1,"Trả lời thẳng, đủ thông tin."],["I check my bag yesterday.",0,"Sai thì và không đúng câu hỏi."],["No, I am a bag.",0,"Nghĩa là “tôi là cái túi” 😅."]],tip:"Just this one … = Chỉ cái này thôi."},
+  {en:"Would you prefer a window or an aisle seat?",vi:"Bạn muốn ngồi cạnh cửa sổ hay lối đi?",o:[
+   ["Window seat, please.",1,"Tên lựa chọn + please."],["I prefer yes.",0,"Câu hỏi A hay B thì không trả lời yes/no."],["Please give me sit.",0,"“sit” là động từ; danh từ là “seat”."]],tip:"A, please. = Cách gọn nhất để chọn."},
+  {en:"Boarding starts at gate 12 at 9:40.",vi:"Lên máy bay bắt đầu ở cổng 12 lúc 9:40.",o:[
+   ["Sorry, which gate was that?",1,"Hỏi lại thông tin bị lỡ một cách tự nhiên."],["Repeat!",0,"Mệnh lệnh cụt, nghe thô."],["I don't know gate.",0,"Không phải cách xin nhắc lại."]],tip:"Sorry, which/what … was that? = Xin lỗi, … là gì nhỉ?"}]},
+
+{id:"CAF",place:"Quán cà phê",icon:"☕",who:"🧑‍🍳",name:"Barista",ctx:"Bạn gọi đồ uống ở một quán cà phê.",
+ v:[["order","/ˈɔːr.dər/","v. / n.","gọi món; món đã gọi","Are you ready to order?"],
+    ["large","/lɑːrdʒ/","adj.","cỡ lớn","Can I get a large latte?","Cỡ: small – medium – large."],
+    ["for here","/fɔːr hɪr/","phrase","dùng tại chỗ","For here, please."],
+    ["to go","/tə ɡoʊ/","phrase","mang đi","Two coffees to go.","Người Anh hay nói “takeaway”."],
+    ["anything else","/ˈen.i.θɪŋ els/","phrase","còn gì nữa không","Anything else?"],
+    ["cash","/kæʃ/","n.","tiền mặt","Can I pay in cash?"],
+    ["tap","/tæp/","v.","chạm thẻ để thanh toán","Can I tap my card?"],
+    ["receipt","/rɪˈsiːt/","n.","hoá đơn","Could I have a receipt?","Chữ “p” câm."]],
+ g:{t:"Gọi món: Can I get / I'd like + a / an / some",intro:"Hai mẫu câu này dùng được ở mọi quán ăn, quán cà phê. Chỉ cần chú ý chọn đúng a / an / some.",
+  p:[["Can I get + món, please?","Mẫu gọi món phổ biến nhất ở Mỹ.","Can I get <b>a</b> large latte, please?"],
+     ["I'd like + món, please.","I'd = I would. Lịch sự hơn nhiều so với “I want”.","I'd like <b>a</b> croissant, please."],
+     ["a / an / some","<b>a</b> + âm phụ âm · <b>an</b> + âm nguyên âm · <b>some</b> + danh từ không đếm được (water, milk, sugar).","a cake · an espresso · some water"]],
+  m:["I want coffee.","I'd like a coffee, please."],
+  ex:[["I'd like ___ espresso, please.",["an","a","some"],0,"espresso bắt đầu bằng âm /e/ (nguyên âm) → an."],
+      ["Can I ___ a cappuccino?",["get","getting","got"],0,"Sau Can I là V nguyên mẫu."],
+      ["Could I have ___ water?",["some","a","an"],0,"water là danh từ không đếm được → some."]]},
+ qs:[
+  {en:"Hi there! What can I get for you?",vi:"Chào bạn! Bạn muốn dùng gì?",o:[
+   ["Can I get a large latte, please?",1,"“Can I get…, please?” là mẫu gọi món phổ biến nhất."],["Give me latte.",0,"Nghe như ra lệnh, thiếu “a” và “please”."],["I am latte.",0,"Lỗi dịch “tôi là cà phê”."]],tip:"Can I get … / I'd like … , please."},
+  {en:"For here or to go?",vi:"Dùng tại chỗ hay mang đi?",o:[
+   ["To go, please.",1,"Nhắc lại lựa chọn là xong."],["Go where?",0,"“To go” = mang đi, không hỏi đi đâu."],["Yes, for here to go.",0,"Gộp cả hai lựa chọn, gây nhầm."]],tip:"For here = tại chỗ · To go = mang đi."},
+  {en:"Anything else?",vi:"Còn gì nữa không ạ?",o:[
+   ["That's all, thanks.",1,"Kết thúc gọn và lịch sự."],["Nothing else thing.",0,"Lặp từ, sai cấu trúc."],["No more, stop.",0,"Đúng nghĩa nhưng cộc lốc."]],tip:"That's it / That's all, thanks."},
+  {en:"That'll be $5.50. Cash or card?",vi:"Hết 5,50 đô. Tiền mặt hay thẻ?",o:[
+   ["Card, please. Can I tap?",1,"“Tap” = chạm thẻ để thanh toán."],["I pay money.",0,"Không trả lời câu hỏi cash/card."],["How much is cost?",0,"Họ vừa nói giá rồi, và câu sai ngữ pháp."]],tip:"Can I pay by card? / Can I tap?"}]},
+
+{id:"HTL",place:"Khách sạn",icon:"🏨",who:"🛎️",name:"Receptionist",ctx:"Bạn nhận phòng và gặp sự cố.",
+ v:[["reservation","/ˌrez.ərˈveɪ.ʃən/","n.","sự đặt chỗ","I have a reservation under Nguyen."],
+    ["book","/bʊk/","v.","đặt (phòng, vé)","I booked a double room.","Danh từ “book” = sách; động từ “book” = đặt chỗ."],
+    ["checkout","/ˈtʃek.aʊt/","n.","việc trả phòng","What time is checkout?"],
+    ["front desk","/frʌnt desk/","n.","quầy lễ tân","Please call the front desk."],
+    ["air conditioning","/ˈer kənˌdɪʃ.ən.ɪŋ/","n.","máy lạnh, điều hoà","The air conditioning isn't working.","Nói tắt: AC."],
+    ["work","/wɜːrk/","v.","(máy móc) hoạt động","The Wi-Fi doesn't work."],
+    ["towel","/ˈtaʊ.əl/","n.","khăn tắm","Could I get some extra towels?"],
+    ["right away","/raɪt əˈweɪ/","adv.","ngay lập tức","I'll send someone right away."]],
+ g:{t:"Báo sự cố: isn't working / There's no …",intro:"Khi có gì đó hỏng hoặc thiếu, hai mẫu câu này giúp bạn nói rõ vấn đề trong một câu.",
+  p:[["S + isn't / aren't + working.","Máy móc đang không hoạt động. Chủ ngữ số ít → isn't, số nhiều → aren't.","The TV <b>isn't</b> working. The lights <b>aren't</b> working."],
+     ["There's no + danh từ.","Thiếu thứ gì đó.","There's no hot water. There's no soap."],
+     ["Could I get / Could you send …?","Đề nghị giúp đỡ một cách lịch sự.","Could you send someone to fix it?"]],
+  m:["TV broken. Air con die.","The TV isn't working."],
+  ex:[["The lights ___ working.",["aren't","isn't","don't"],0,"lights là số nhiều → aren't."],
+      ["The shower ___ working.",["isn't","aren't","not"],0,"shower số ít → isn't."],
+      ["___ no hot water in my room.",["There's","It's","Have"],0,"Diễn tả thiếu thứ gì → There's no …"]]},
+ qs:[
+  {en:"Welcome! Do you have a reservation?",vi:"Chào mừng! Bạn đã đặt phòng chưa?",o:[
+   ["Yes, it's under Nguyen.",1,"“under + tên” = đặt dưới tên ai."],["Yes, I reserve already.",0,"Cần thì hoàn thành: “I've already booked”."],["Reservation is yes.",0,"Đảo lộn, khó hiểu."]],tip:"It's under (tên). = Đặt dưới tên …"},
+  {en:"Breakfast is from 6:30 to 10. Is there anything else I can help with?",vi:"Bữa sáng từ 6:30 đến 10 giờ. Tôi còn giúp gì được không?",o:[
+   ["Could I get a late checkout?",1,"“Could I…?” lịch sự hơn “Can I…?”."],["I want sleep more tomorrow.",0,"Mơ hồ và sai ngữ pháp (want to sleep)."],["No help.",0,"Nghe như từ chối thô."]],tip:"Could I get a late checkout? = Trả phòng muộn được không?"},
+  {en:"Front desk, how can I help?",vi:"(Gọi điện) Lễ tân xin nghe, tôi giúp gì được?",o:[
+   ["Hi, the air conditioning in room 508 isn't working.",1,"Số phòng + vấn đề. Đủ để họ xử lý."],["Air con die.",0,"Quá cụt, “die” không dùng cho máy lạnh."],["Room hot, you fix.",0,"Kiểu ra lệnh, thiếu lịch sự."]],tip:"The … isn't working. = … bị hỏng."},
+  {en:"I'm so sorry. I'll send someone up right away.",vi:"Rất xin lỗi. Tôi sẽ cho người lên ngay.",o:[
+   ["Great, thank you so much.",1,"Cảm ơn tự nhiên."],["It's okay, no problem, you sorry.",0,"Lộn xộn và không cần thiết."],["Why you sorry?",0,"Nghe như bắt bẻ."]],tip:"Right away = ngay lập tức."}]},
+
+{id:"DIR",place:"Hỏi đường",icon:"🗺️",who:"🚶",name:"Local",ctx:"Bạn bị lạc và cần hỏi đường.",
+ v:[["excuse me","/ɪkˈskjuːz miː/","phrase","xin lỗi (để gọi người lạ)","Excuse me, can you help me?","Dùng “sorry” khi xin lỗi vì lỗi của mình."],
+    ["get to","/ɡet tuː/","phr. v.","đi đến","How do I get to the station?"],
+    ["straight","/streɪt/","adv.","thẳng","Go straight for two blocks."],
+    ["turn left","/tɜːrn left/","phrase","rẽ trái","Turn left at the traffic lights."],
+    ["next to","/nekst tuː/","prep.","bên cạnh","It's next to the bank."],
+    ["opposite","/ˈɑː.pə.zɪt/","prep.","đối diện","The café is opposite the park."],
+    ["on foot","/ɑːn fʊt/","phrase","đi bộ","It's five minutes on foot."],
+    ["far","/fɑːr/","adj.","xa","Is it far from here?"]],
+ g:{t:"Chỉ đường: câu mệnh lệnh + giới từ vị trí",intro:"Người bản xứ chỉ đường bằng câu mệnh lệnh ngắn. Nắm được các giới từ vị trí là bạn hiểu họ nói tới đâu.",
+  p:[["V (nguyên mẫu) + …","Câu mệnh lệnh không có chủ ngữ, bắt đầu bằng động từ.","<b>Go</b> straight. <b>Turn</b> right. <b>Take</b> the second left."],
+     ["next to · opposite · between A and B · on the corner","cạnh · đối diện · ở giữa A và B · ở góc phố","It's <b>between</b> the bank <b>and</b> the post office."],
+     ["How do I get to + nơi chốn?","Mẫu hỏi đường chuẩn nhất.","How do I get <b>to</b> the museum?"]],
+  m:["Where is go station?","How do I get to the station?"],
+  ex:[["___ straight, then turn left.",["Go","Going","You go to"],0,"Câu mệnh lệnh bắt đầu bằng V nguyên mẫu."],
+      ["The pharmacy is ___ the bank and the post office.",["between","next","opposite to"],0,"between A and B = ở giữa A và B."],
+      ["How do I get ___ the museum?",["to","at","in"],0,"get to + nơi chốn = đi đến đâu."]]},
+ qs:[
+  {en:"(You need to stop a stranger)",vi:"Bạn cần bắt chuyện với người lạ. Câu mở đầu nào lịch sự nhất?",o:[
+   ["Excuse me, could you help me for a second?",1,"“Excuse me” để gây chú ý lịch sự."],["Hey you! Come here.",0,"Rất bất lịch sự với người lạ."],["Sorry sorry sorry.",0,"“Sorry” là xin lỗi, không dùng để gọi."]],tip:"Excuse me = gọi người lạ · Sorry = xin lỗi."},
+  {en:"Sure, what are you looking for?",vi:"Được thôi, bạn đang tìm gì?",o:[
+   ["How do I get to the train station?",1,"Mẫu hỏi đường chuẩn nhất."],["Where is go train?",0,"Sai ngữ pháp."],["Train station is where you?",0,"Đảo từ, gây nhầm."]],tip:"How do I get to …? = Làm sao để đến …?"},
+  {en:"Go straight, then take the second left. It's next to the bank.",vi:"Đi thẳng, rồi rẽ trái ở ngã thứ hai. Nó cạnh ngân hàng.",o:[
+   ["So, second left, next to the bank?",1,"Nhắc lại để xác nhận, rất hữu ích khi nghe chưa chắc."],["Left second bank OK.",0,"Không thành câu."],["I don't understand English.",0,"Bỏ cuộc quá sớm!"]],tip:"Nhắc lại thông tin là cách xác nhận an toàn nhất."},
+  {en:"Yep, you can't miss it. About five minutes on foot.",vi:"Đúng rồi, dễ thấy lắm. Đi bộ khoảng 5 phút.",o:[
+   ["Perfect, thanks a lot!",1,"Kết thúc vui vẻ."],["I can miss it.",0,"“You can't miss it” = chắc chắn sẽ thấy."],["Five minute food?",0,"“on foot” = đi bộ, không phải đồ ăn."]],tip:"On foot = đi bộ · You can't miss it = dễ thấy lắm."}]},
+
+{id:"SHP",place:"Mua sắm",icon:"🛍️",who:"🧑‍💼",name:"Shop assistant",ctx:"Bạn đi mua áo.",
+ v:[["just looking","/dʒʌst ˈlʊk.ɪŋ/","phrase","chỉ xem thôi","I'm just looking, thanks."],
+    ["in particular","/ɪn pərˈtɪk.jə.lər/","phrase","cụ thể","Are you looking for anything in particular?"],
+    ["size","/saɪz/","n.","cỡ, kích thước","What size are you?"],
+    ["medium","/ˈmiː.di.əm/","n. / adj.","cỡ vừa (M)","Do you have this in a medium?"],
+    ["fitting room","/ˈfɪt.ɪŋ ruːm/","n.","phòng thử đồ","Where's the fitting room?"],
+    ["tight","/taɪt/","adj.","chật","It's a bit tight."],
+    ["loose","/luːs/","adj.","rộng, lỏng","These jeans are too loose.","Đừng nhầm với “lose” /luːz/ (mất)."],
+    ["discount","/ˈdɪs.kaʊnt/","n.","sự giảm giá","Is there a discount today?"]],
+ g:{t:"So sánh hơn: bigger / more expensive",intro:"Khi đồ không vừa hoặc muốn so giá, bạn cần so sánh hơn. Quy tắc phụ thuộc vào độ dài tính từ.",
+  p:[["adj ngắn + -er (+ than)","Tính từ 1 âm tiết thêm -er. Phụ âm–nguyên âm–phụ âm thì gấp đôi phụ âm cuối.","small → smaller · cheap → cheaper · big → <b>bigger</b>"],
+     ["more + adj dài (+ than)","Tính từ 2 âm tiết trở lên.","more expensive · more comfortable"],
+     ["Bất quy tắc","Phải học thuộc.","good → <b>better</b> · bad → <b>worse</b>"]],
+  m:["This one is more bigger.","This one is bigger."],
+  ex:[["It's too tight. Do you have a ___ size?",["bigger","more big","biger"],0,"big → bigger (gấp đôi g)."],
+      ["This jacket is ___ than that one.",["more expensive","expensiver","most expensive"],0,"expensive dài → more expensive. “most” là so sánh nhất."],
+      ["The blue one is ___ than the red one. (good)",["better","gooder","more good"],0,"good → better (bất quy tắc)."]]},
+ qs:[
+  {en:"Hi, are you looking for anything in particular?",vi:"Chào bạn, bạn có tìm món gì cụ thể không?",o:[
+   ["Just looking, thanks.",1,"Câu chuẩn khi chỉ muốn xem."],["No, I don't look.",0,"Nghĩa là “tôi không nhìn”."],["Particular is no.",0,"Sai cấu trúc."]],tip:"I'm just looking, thanks."},
+  {en:"Let me know if you need anything.",vi:"Cần gì cứ báo tôi nhé.",o:[
+   ["Actually, do you have this in a medium?",1,"“in + cỡ/màu” = có cỡ/màu này không."],["This have M?",0,"Thiếu trợ động từ, nghe như tin nhắn."],["I need medium people.",0,"Nghĩa lạ: “người cỡ vừa”."]],tip:"Do you have this in (size/color)?"},
+  {en:"The fitting rooms are just over there.",vi:"Phòng thử đồ ở ngay đằng kia.",o:[
+   ["Thanks. It's a bit tight. Do you have a bigger size?",1,"Mô tả + yêu cầu cụ thể."],["It small, change.",0,"Cộc và sai ngữ pháp."],["Tight is good for me no.",0,"Rối, khó hiểu."]],tip:"a bit tight / loose = hơi chật / rộng."},
+  {en:"It's 40 dollars, but it's 20% off today.",vi:"Giá 40 đô nhưng hôm nay giảm 20%.",o:[
+   ["Nice! So that's 32 dollars, right?",1,"Xác nhận giá để tránh hiểu nhầm."],["Off? It's broken?",0,"“% off” = giảm giá, không phải hỏng."],["Discount me more.",0,"Mặc cả kiểu này nghe thô."]],tip:"20% off = giảm 20%."}]},
+
+{id:"TLK",place:"Làm quen",icon:"🤝",who:"🙂",name:"New colleague",ctx:"Bạn gặp đồng nghiệp mới ở một sự kiện.",
+ v:[["meet","/miːt/","v.","gặp, làm quen","Nice to meet you."],
+    ["colleague","/ˈkɑː.liːɡ/","n.","đồng nghiệp","She's my colleague."],
+    ["What do you do?","/wʌt də jə duː/","phrase","Bạn làm nghề gì?","So, what do you do?","Không phải “bạn đang làm gì” (= What are you doing?)."],
+    ["work in","/wɜːrk ɪn/","phrase","làm trong lĩnh vực","I work in marketing."],
+    ["company","/ˈkʌm.pə.ni/","n.","công ty","I work for a small company."],
+    ["How about you?","/haʊ əˈbaʊt juː/","phrase","Còn bạn thì sao?","I'm from Hanoi. How about you?"],
+    ["chat","/tʃæt/","v.","trò chuyện","It was great chatting!"],
+    ["keep in touch","/kiːp ɪn tʌtʃ/","phrase","giữ liên lạc","Let's keep in touch."]],
+ g:{t:"Hiện tại hoàn thành: How long have you been …? + for / since",intro:"Câu hỏi “bạn làm ở đó bao lâu rồi” xuất hiện trong hầu hết cuộc làm quen. Cần dùng thì hiện tại hoàn thành.",
+  p:[["S + have / has + V3 (quá khứ phân từ)","Việc bắt đầu trong quá khứ và vẫn còn tiếp tục đến bây giờ.","I <b>have worked</b> here … · I<b>'ve been</b> here …"],
+     ["for + khoảng thời gian","Kéo dài bao lâu.","for three years · for six months"],
+     ["since + mốc thời gian","Bắt đầu từ khi nào.","since 2023 · since January"]],
+  m:["I work here since three years.","I've worked here for three years."],
+  ex:[["I've worked here ___ 2022.",["since","for","from"],0,"2022 là mốc thời gian → since."],
+      ["She has lived in Saigon ___ five years.",["for","since","in"],0,"five years là khoảng thời gian → for."],
+      ["How long ___ you been at this company?",["have","did","are"],0,"How long have you been …? (hiện tại hoàn thành)."]]},
+ qs:[
+  {en:"Hi, I'm Sam. I don't think we've met.",vi:"Chào, tôi là Sam. Hình như mình chưa gặp nhau.",o:[
+   ["Hi Sam, I'm Linh. Nice to meet you.",1,"Chào lại + giới thiệu tên + câu xã giao."],["Yes, we not meet.",0,"Sai ngữ pháp, nghe hơi lạnh."],["My name is Linh. And you?",0,"Sam vừa nói tên rồi, hỏi lại là chưa nghe."]],tip:"Nice to meet you = Rất vui được gặp bạn."},
+  {en:"So, what do you do?",vi:"Bạn làm nghề gì?",o:[
+   ["I work in sales for a furniture company.",1,"“work in + lĩnh vực” rất tự nhiên."],["I do many things.",0,"Né câu hỏi, khó nối chuyện."],["I am doing now talking.",0,"Hiểu nhầm thành “đang làm gì”."]],tip:"What do you do? = Bạn làm nghề gì?"},
+  {en:"Oh nice. How long have you been there?",vi:"Hay đó. Bạn làm ở đó bao lâu rồi?",o:[
+   ["About three years now. How about you?",1,"Trả lời + hỏi lại để giữ cuộc trò chuyện."],["Three year.",0,"Thiếu “s”, và cuộc nói chuyện dừng lại."],["Since three years.",0,"since + mốc thời gian; khoảng thời gian dùng for."]],tip:"How about you? = Còn bạn thì sao?"},
+  {en:"Anyway, I should go grab a drink. It was great chatting!",vi:"Thôi, tôi đi lấy đồ uống đây. Nói chuyện vui lắm!",o:[
+   ["You too! Let's keep in touch.",1,"Đáp lại + mở đường liên lạc."],["Okay bye bye go.",0,"Cụt và trẻ con."],["Why you go?",0,"Nghe như trách móc."]],tip:"Let's keep in touch = Giữ liên lạc nhé."}]}
+];
+
+
+/* ===== CẤP B1 ===== */
+const B1=[
+{id:"JOB",place:"Phỏng vấn",icon:"💼",who:"👩‍💼",name:"Interviewer",ctx:"Bạn đang phỏng vấn cho vị trí nhân viên marketing.",
+ v:[["experience","/ɪkˈspɪr.i.əns/","n.","kinh nghiệm","I have three years of experience in marketing.","Nghĩa “kinh nghiệm làm việc” là danh từ không đếm được: không thêm “s”."],
+    ["responsible for","/rɪˈspɑːn.sə.bəl fɔːr/","adj. phr.","chịu trách nhiệm về","I was responsible for our social media."],
+    ["strength","/streŋkθ/","n.","điểm mạnh","My main strength is communication."],
+    ["weakness","/ˈwiːk.nəs/","n.","điểm yếu","One weakness is that I take on too much."],
+    ["deadline","/ˈded.laɪn/","n.","hạn chót","I always meet my deadlines.","meet a deadline = kịp hạn · miss a deadline = trễ hạn."],
+    ["achieve","/əˈtʃiːv/","v.","đạt được","We achieved a 20% increase in sales."],
+    ["apply for","/əˈplaɪ fɔːr/","phr. v.","ứng tuyển","I'm applying for the marketing position."],
+    ["salary","/ˈsæl.ɚ.i/","n.","lương","What salary are you expecting?"]],
+ g:{t:"Quá khứ đơn hay Hiện tại hoàn thành khi kể kinh nghiệm",intro:"Trong phỏng vấn, bạn liên tục nói về quá khứ. Chọn đúng thì giúp câu trả lời nghe chuyên nghiệp hơn hẳn.",
+  p:[["S + V2 / V-ed (+ thời điểm cụ thể)","Việc đã kết thúc, có thời gian rõ ràng: in 2021, last year, at my last job.","I <b>joined</b> ABC Company <b>in 2021</b>."],
+     ["S + have / has + V3","Kinh nghiệm tính đến bây giờ, không nói thời điểm.","I <b>have managed</b> several campaigns."],
+     ["Mẹo nhận biết","Có <b>ago, last, yesterday, in + năm</b> → quá khứ đơn. Có <b>ever, never, so far, for, since</b> → hiện tại hoàn thành.","Have you ever <b>worked</b> abroad? – Yes, I <b>worked</b> in Singapore in 2020."]],
+  m:["I have worked there in 2020.","I worked there in 2020."],
+  ex:[["I ___ from university in 2019.",["graduated","have graduated","graduate"],0,"Có thời điểm “in 2019” → quá khứ đơn."],
+      ["So far, I ___ three big projects.",["have led","led","lead"],0,"“So far” (tính đến nay) → hiện tại hoàn thành."],
+      ["Two years ago, I ___ as a sales assistant.",["worked","have worked","work"],0,"“ago” → quá khứ đơn."]]},
+ qs:[
+  {en:"Thanks for coming in. Could you tell me a little about yourself?",vi:"Cảm ơn bạn đã đến. Bạn giới thiệu đôi chút về bản thân nhé?",o:[
+   ["Sure. I've worked in digital marketing for four years, mostly on social media campaigns.",1,"Ngắn gọn, tập trung vào kinh nghiệm liên quan đến công việc."],["I was born in 1998 and I like eating and watching films.",0,"Phỏng vấn cần nói về năng lực, không kể sở thích cá nhân."],["Everything is in my CV.",0,"Nghe thiếu hợp tác và hơi kiêu."]],tip:"I've worked in + lĩnh vực + for + thời gian."},
+  {en:"What was your role at your last company?",vi:"Vai trò của bạn ở công ty trước là gì?",o:[
+   ["I was responsible for planning and running our online ads.",1,"responsible for + V-ing, quá khứ đơn vì công việc đã kết thúc."],["I am responsible to make ads.",0,"Sai giới từ (for, không phải to) và sai thì."],["I did many things, everything.",0,"Mơ hồ, không cho thấy năng lực."]],tip:"I was responsible for + V-ing."},
+  {en:"What would you say is your biggest weakness?",vi:"Bạn nghĩ điểm yếu lớn nhất của mình là gì?",o:[
+   ["I sometimes take on too much, so I've started using a task list to prioritize.",1,"Nêu điểm yếu thật + cách bạn đang cải thiện. Đây là công thức an toàn."],["I don't have any weaknesses.",0,"Nghe thiếu trung thực."],["I'm often late for work.",0,"Thật thà quá mức, gây mất điểm."]],tip:"Điểm yếu + hành động cải thiện = câu trả lời mạnh."},
+  {en:"Do you have any questions for us?",vi:"Bạn có câu hỏi nào cho chúng tôi không?",o:[
+   ["Yes, what would a typical day look like in this role?",1,"Cho thấy bạn thật sự quan tâm đến công việc."],["No.",0,"Bỏ lỡ cơ hội gây ấn tượng."],["How many days off do I get?",0,"Hỏi về ngày nghỉ ngay vòng đầu thường bị đánh giá thấp."]],tip:"Luôn chuẩn bị 1–2 câu hỏi về công việc."}]},
+
+{id:"DOC",place:"Khám bệnh",icon:"🩺",who:"👨‍⚕️",name:"Doctor",ctx:"Bạn bị ốm và đi khám ở phòng khám.",
+ v:[["symptom","/ˈsɪmp.təm/","n.","triệu chứng","What are your symptoms?"],
+    ["sore throat","/sɔːr θroʊt/","n.","đau họng","I've had a sore throat since Monday."],
+    ["fever","/ˈfiː.vɚ/","n.","sốt","I had a high fever last night."],
+    ["cough","/kɑːf/","n. / v.","ho","My cough is getting worse.","“gh” ở đây đọc là /f/."],
+    ["dizzy","/ˈdɪz.i/","adj.","chóng mặt","I feel dizzy when I stand up."],
+    ["prescription","/prɪˈskrɪp.ʃən/","n.","đơn thuốc","I'll give you a prescription."],
+    ["allergic to","/əˈlɝː.dʒɪk tuː/","adj. phr.","dị ứng với","Are you allergic to any medicine?","allergy (n.) – allergic (adj.)."],
+    ["rest","/rest/","n. / v.","nghỉ ngơi","You should get some rest."]],
+ g:{t:"Kể triệu chứng và khuyên: I've had … for / should",intro:"Bác sĩ cần biết bạn bị gì và bị bao lâu. Đây cũng là lúc bạn nghe nhiều lời khuyên với “should”.",
+  p:[["I've had + triệu chứng + for / since …","Triệu chứng bắt đầu từ trước và vẫn còn.","I<b>'ve had</b> a headache <b>for</b> two days."],
+     ["I feel + adj · My + bộ phận + hurts","Mô tả cảm giác và chỗ đau.","I <b>feel</b> dizzy. My back <b>hurts</b>."],
+     ["You should / shouldn't + V","Lời khuyên. Không có “to” sau should.","You <b>should drink</b> more water. You <b>shouldn't go</b> to work."]],
+  m:["You should to rest.","You should rest."],
+  ex:[["I ___ a cough for a week.",["'ve had","have","had had"],0,"Bắt đầu một tuần trước, vẫn còn → I've had."],
+      ["You should ___ this medicine twice a day.",["take","to take","taking"],0,"should + V nguyên mẫu. “Uống thuốc” là take medicine."],
+      ["My head ___.",["hurts","is hurt","hurt me"],0,"My + bộ phận + hurts = bị đau ở đâu."]]},
+ qs:[
+  {en:"So, what seems to be the problem?",vi:"Bạn đang gặp vấn đề gì?",o:[
+   ["I've had a sore throat and a fever since Tuesday.",1,"Nêu triệu chứng + từ khi nào, đúng thì hiện tại hoàn thành."],["I am sick from Tuesday.",0,"Sai giới từ và sai thì."],["Problem is my body.",0,"Quá chung chung, bác sĩ không biết bắt đầu từ đâu."]],tip:"I've had + triệu chứng + since / for …"},
+  {en:"Have you taken anything for it?",vi:"Bạn đã uống thuốc gì chưa?",o:[
+   ["Just some paracetamol, but it didn't help much.",1,"Đủ thông tin cho bác sĩ."],["Yes, I take.",0,"Thiếu tân ngữ và sai thì."],["I don't know medicine.",0,"Không trả lời câu hỏi."]],tip:"take medicine = uống thuốc (không dùng drink)."},
+  {en:"Are you allergic to any medication?",vi:"Bạn có dị ứng với thuốc nào không?",o:[
+   ["Yes, I'm allergic to penicillin.",1,"allergic + to + tên thuốc."],["I am allergy penicillin.",0,"allergy là danh từ; cần “allergic to”."],["Maybe, I forget.",0,"Thông tin quan trọng, cần trả lời rõ."]],tip:"I'm allergic to … / I have an allergy to …"},
+  {en:"It's probably a virus. You should rest and drink plenty of fluids.",vi:"Có lẽ do virus. Bạn nên nghỉ ngơi và uống nhiều nước.",o:[
+   ["Okay. How long should I stay off work?",1,"Hỏi thêm thông tin thực tế. “stay off work” = nghỉ làm."],["Why you don't give me medicine?",0,"Sai trật tự câu hỏi và nghe gay gắt."],["Okay, I will drink many fluid.",0,"fluids là số nhiều; dùng “a lot of / plenty of”."]],tip:"stay off work = nghỉ làm (vì ốm)."}]},
+
+{id:"PHN",place:"Gọi điện",icon:"📞",who:"📱",name:"Receptionist",ctx:"Bạn gọi điện cho văn phòng của một đối tác.",
+ v:[["speak to","/spiːk tuː/","phr. v.","nói chuyện với","Could I speak to Ms. Tran, please?"],
+    ["available","/əˈveɪ.lə.bəl/","adj.","rảnh, có thể nghe máy","Is she available this afternoon?"],
+    ["hold on","/hoʊld ɑːn/","phr. v.","chờ máy","Hold on a moment, please."],
+    ["put through","/pʊt θruː/","phr. v.","nối máy","I'll put you through."],
+    ["leave a message","/liːv ə ˈmes.ɪdʒ/","phrase","để lại lời nhắn","Would you like to leave a message?"],
+    ["call back","/kɑːl bæk/","phr. v.","gọi lại","Could you ask her to call me back?"],
+    ["reschedule","/ˌriːˈskedʒ.uːl/","v.","đổi lịch","Can we reschedule to Friday?"],
+    ["confirm","/kənˈfɝːm/","v.","xác nhận","I'm calling to confirm our meeting."]],
+ g:{t:"Nói về tương lai: will / be going to / hiện tại tiếp diễn",intro:"Tiếng Việt chỉ cần “sẽ”, nhưng tiếng Anh có 3 cách tuỳ theo việc đó đã được quyết định hay sắp xếp ra sao.",
+  p:[["will + V","Quyết định ngay lúc nói, lời hứa, đề nghị.","Hold on, I<b>'ll</b> check."],
+     ["be going to + V","Dự định đã có từ trước.","I<b>'m going to</b> visit your office next week."],
+     ["be + V-ing (+ thời gian)","Lịch hẹn đã sắp xếp chắc chắn.","I<b>'m meeting</b> the director on Monday."]],
+  m:["I will meet him at 3 tomorrow, we booked it already.","I'm meeting him at 3 tomorrow."],
+  ex:[["The phone is ringing. I ___ get it.",["'ll","'m going to","am getting"],0,"Quyết định ngay lúc nói → will."],
+      ["We ___ the client at 10 tomorrow. It's in the calendar.",["are meeting","will meet","meet"],0,"Lịch đã sắp xếp → hiện tại tiếp diễn."],
+      ["I decided last week: I ___ apply for that job.",["'m going to","'ll","am applying to"],0,"Dự định đã quyết từ trước → be going to."]]},
+ qs:[
+  {en:"Good afternoon, Bright Solutions. How may I help you?",vi:"Chào buổi chiều, Bright Solutions xin nghe. Tôi giúp gì được ạ?",o:[
+   ["Hi, this is Linh from ABC. Could I speak to Ms. Tran, please?",1,"Trên điện thoại dùng “This is …” để xưng tên."],["Hello, I am Linh. Give me Ms. Tran.",0,"Nghe như ra lệnh, thiếu lịch sự."],["Who are you?",0,"Họ vừa xưng tên công ty rồi."]],tip:"This is (tên) from (công ty)."},
+  {en:"I'm afraid she's in a meeting right now. Would you like to leave a message?",vi:"Rất tiếc chị ấy đang họp. Anh/chị có muốn để lại lời nhắn không?",o:[
+   ["Yes, please. Could you ask her to call me back?",1,"Nhờ gọi lại: ask sb to + V."],["No, I wait.",0,"Sai thì (I'll wait) và không rõ ý."],["When she finish?",0,"Thiếu trợ động từ: When will she finish?"]],tip:"Could you ask her to call me back?"},
+  {en:"Sure. Can I take your number?",vi:"Vâng. Cho tôi xin số điện thoại nhé?",o:[
+   ["It's 0903 456 789. And my name is Linh, L-I-N-H.",1,"Đọc số theo cụm, đánh vần tên để tránh nhầm."],["My number is very long.",0,"Không cung cấp thông tin."],["Number me 0903456789.",0,"Sai cấu trúc."]],tip:"Đọc số điện thoại theo từng cụm 3–4 số."},
+  {en:"Thanks. Oh, she also asked if you could move tomorrow's meeting to Thursday.",vi:"Cảm ơn. À, chị ấy cũng hỏi anh/chị có thể dời cuộc họp ngày mai sang thứ Năm không.",o:[
+   ["Thursday works for me. I'll send her a confirmation email.",1,"“works for me” = tôi sắp xếp được. Dùng will cho quyết định ngay."],["Okay, I am going to send email now.",0,"Quyết định tức thời nên dùng will; thiếu “an”."],["Thursday is not my favorite day.",0,"Không trả lời rõ được hay không."]],tip:"… works for me. = … tôi sắp xếp được."}]},
+
+{id:"CMP",place:"Khiếu nại",icon:"📦",who:"🎧",name:"Customer service",ctx:"Đơn hàng online bị hỏng, bạn gọi tổng đài để giải quyết.",
+ v:[["complaint","/kəmˈpleɪnt/","n.","lời phàn nàn, khiếu nại","I'd like to make a complaint."],
+    ["delivery","/dɪˈlɪv.ɚ.i/","n.","việc giao hàng","The delivery was two days late."],
+    ["damaged","/ˈdæm.ɪdʒd/","adj.","bị hư hỏng","The box arrived damaged."],
+    ["refund","/ˈriː.fʌnd/","n.","tiền hoàn lại","I'd like a full refund."],
+    ["replacement","/rɪˈpleɪs.mənt/","n.","món đồ thay thế","Could you send a replacement?"],
+    ["I'm afraid","/aɪm əˈfreɪd/","phrase","rất tiếc là (mở đầu tin không vui)","I'm afraid there's a problem with my order.","Ở đây không có nghĩa là “tôi sợ”."],
+    ["inconvenience","/ˌɪn.kənˈviː.ni.əns/","n.","sự bất tiện","Sorry for the inconvenience."],
+    ["sort out","/sɔːrt aʊt/","phr. v.","giải quyết xong","Thanks for sorting it out."]],
+ g:{t:"Câu hỏi gián tiếp: hỏi lịch sự hơn",intro:"Khi khiếu nại hoặc nhờ vả, câu hỏi gián tiếp giúp bạn lịch sự mà vẫn rõ ràng. Lỗi phổ biến nhất là giữ nguyên trật tự câu hỏi.",
+  p:[["Could you tell me + từ để hỏi + S + V?","Sau từ để hỏi, đưa về trật tự câu khẳng định (chủ ngữ đứng trước động từ).","Where <b>is my order</b>? → Could you tell me where <b>my order is</b>?"],
+     ["Do you know if / whether + S + V?","Dùng cho câu hỏi yes/no.","Is it in stock? → Do you know <b>if it is</b> in stock?"],
+     ["I was wondering if you could + V","Mẫu nhờ vả rất lịch sự.","<b>I was wondering if you could</b> send a replacement."]],
+  m:["Could you tell me when will it arrive?","Could you tell me when it will arrive?"],
+  ex:[["Could you tell me how long ___?",["the refund will take","will the refund take","does the refund take"],0,"Câu hỏi gián tiếp: chủ ngữ + động từ (the refund will take)."],
+      ["Do you know ___ the shop is open on Sunday?",["if","what","does"],0,"Câu hỏi yes/no gián tiếp → if / whether."],
+      ["I was wondering if you ___ help me.",["could","can to","are"],0,"Mẫu cố định: I was wondering if you could + V."]]},
+ qs:[
+  {en:"Thank you for calling. How can I help you today?",vi:"Cảm ơn quý khách đã gọi. Tôi có thể giúp gì?",o:[
+   ["Hi, I'm afraid there's a problem with my order. The blender arrived damaged.",1,"“I'm afraid” mở đầu tin xấu lịch sự, rồi nêu vấn đề cụ thể."],["Your company is terrible! My blender is broken!",0,"Giận dữ khiến cuộc gọi khó đi đến kết quả."],["I afraid the blender.",0,"Thiếu “am”, và nghĩa thành “tôi sợ cái máy xay”."]],tip:"I'm afraid … = Rất tiếc là …"},
+  {en:"I'm very sorry to hear that. When did it arrive?",vi:"Rất tiếc khi nghe vậy. Hàng đến khi nào ạ?",o:[
+   ["It came yesterday, and the lid was cracked when I opened the box.",1,"Quá khứ đơn + mô tả cụ thể."],["It has come yesterday.",0,"Có “yesterday” thì dùng quá khứ đơn."],["I don't remember, maybe last year.",0,"Không giúp gì cho việc giải quyết."]],tip:"Mô tả vấn đề càng cụ thể, xử lý càng nhanh."},
+  {en:"We can offer you a refund or a replacement. Which would you prefer?",vi:"Chúng tôi có thể hoàn tiền hoặc đổi hàng. Quý khách muốn cách nào?",o:[
+   ["I'd prefer a replacement. Could you tell me when it will arrive?",1,"Chọn rõ ràng + câu hỏi gián tiếp đúng trật tự."],["Replacement. When will arrive it?",0,"Sai trật tự câu hỏi."],["Both, please.",0,"Không thể nhận cả hai."]],tip:"Could you tell me when it will arrive?"},
+  {en:"It should arrive within three working days. We apologize for the inconvenience.",vi:"Hàng sẽ đến trong 3 ngày làm việc. Chúng tôi xin lỗi vì sự bất tiện.",o:[
+   ["That's fine. Thanks for sorting it out so quickly.",1,"Cảm ơn tạo thiện cảm. sort out = giải quyết."],["You should apologize more.",0,"Không cần thiết, gây căng thẳng."],["Inconvenience is okay.",0,"Nghe lạ, không tự nhiên."]],tip:"sort sth out = giải quyết xong việc gì."}]}
+];
+
+/* ===== CẤP B+ (B1+ → B2) ===== */
+const BP=[
+{id:"MTG",place:"Họp nhóm",icon:"🗣️",who:"👨‍💼",name:"Team leader",ctx:"Nhóm đang họp để quyết định có nên ra mắt sản phẩm sớm không.",
+ v:[["agenda","/əˈdʒen.də/","n.","chương trình họp","Let's move on to the next item on the agenda."],
+    ["point of view","/pɔɪnt əv vjuː/","n.","quan điểm","From my point of view, it's too risky."],
+    ["concern","/kənˈsɝːn/","n.","mối lo ngại","My main concern is the budget."],
+    ["suggest","/səˈdʒest/","v.","đề xuất","I suggest that we wait until June.","suggest + V-ing / suggest (that) + S + V. Không nói “suggest to do”."],
+    ["launch","/lɑːntʃ/","v. / n.","ra mắt (sản phẩm)","We plan to launch in June."],
+    ["risk","/rɪsk/","n.","rủi ro","There's a risk of delays."],
+    ["on the same page","/ɑːn ðə seɪm peɪdʒ/","idiom","thống nhất, hiểu giống nhau","Let's make sure we're all on the same page."],
+    ["follow up","/ˈfɑː.loʊ ʌp/","phr. v.","liên hệ lại, theo dõi tiếp","I'll follow up with the design team."]],
+ g:{t:"Câu điều kiện loại 1 và 2 khi bàn phương án",intro:"Họp là lúc cân nhắc “nếu… thì…”. Loại 1 cho khả năng có thật, loại 2 cho giả định hoặc góp ý nhẹ nhàng.",
+  p:[["Loại 1: If + hiện tại đơn, S + will + V","Khả năng có thật trong tương lai. Không dùng will sau If.","If we <b>launch</b> in May, we <b>will beat</b> our competitors."],
+     ["Loại 2: If + quá khứ đơn, S + would + V","Giả định khó xảy ra ở hiện tại hoặc tương lai.","If we <b>had</b> more time, we <b>would test</b> it again."],
+     ["If I were you, I would …","Khuyên nhủ lịch sự. Dùng “were” cho mọi ngôi.","<b>If I were you, I'd</b> wait for the test results."]],
+  m:["If we will launch early, we will have problems.","If we launch early, we will have problems."],
+  ex:[["If the client ___ the design, we will start next week.",["approves","will approve","approved"],0,"Loại 1: mệnh đề If dùng hiện tại đơn."],
+      ["If we had a bigger budget, we ___ more staff.",["would hire","will hire","hire"],0,"Loại 2: would + V."],
+      ["If I ___ you, I'd talk to the manager first.",["were","am","was being"],0,"If I were you – cấu trúc cố định."]]},
+ qs:[
+  {en:"So, the main item on today's agenda is the launch date. Any thoughts?",vi:"Vấn đề chính hôm nay là ngày ra mắt. Mọi người nghĩ sao?",o:[
+   ["From my point of view, launching in May is a bit risky. The app still has some bugs.",1,"Nêu quan điểm + lý do. “a bit” làm câu mềm hơn."],["May is wrong. Everyone knows that.",0,"Phủ định thẳng thừng, dễ gây đối đầu."],["I agree with everything.",0,"Không đóng góp ý kiến nào."]],tip:"From my point of view, … = Theo quan điểm của tôi, …"},
+  {en:"I see your point, but if we wait, our competitors will launch first.",vi:"Tôi hiểu ý bạn, nhưng nếu chờ thì đối thủ sẽ ra mắt trước.",o:[
+   ["That's true. But if we launched with bugs, we would lose our users' trust.",1,"Công nhận ý đối phương rồi phản biện bằng câu điều kiện."],["No, you are wrong.",0,"Phản bác trực diện, không có lý lẽ."],["If we will wait, we will be fine.",0,"Sai ngữ pháp: không dùng will sau If."]],tip:"That's true, but … = Đúng vậy, nhưng …"},
+  {en:"Fair enough. So what do you suggest?",vi:"Cũng hợp lý. Vậy bạn đề xuất gì?",o:[
+   ["I suggest we do a small beta launch in May and a full launch in June.",1,"suggest (that) + S + V. Đưa ra phương án dung hoà."],["I suggest to wait.",0,"Sai cấu trúc: suggest waiting / suggest that we wait."],["I don't know, you decide.",0,"Đẩy trách nhiệm, thiếu chủ động."]],tip:"I suggest (that) we + V / I suggest + V-ing."},
+  {en:"I like that. Can you follow up with the dev team and report back on Friday?",vi:"Ý hay. Bạn liên hệ nhóm lập trình và báo lại vào thứ Sáu được không?",o:[
+   ["Sure. I'll send everyone a summary so we're all on the same page.",1,"Nhận việc rõ ràng + dùng thành ngữ đúng ngữ cảnh."],["Okay, I am going to maybe do it.",0,"Nghe thiếu cam kết."],["Why me?",0,"Thiếu chuyên nghiệp."]],tip:"report back = báo cáo lại · on the same page = thống nhất."}]},
+
+{id:"PRS",place:"Báo cáo",icon:"📊",who:"👩‍💻",name:"Director",ctx:"Bạn trình bày kết quả kinh doanh quý vừa rồi cho giám đốc.",
+ v:[["overview","/ˈoʊ.vɚ.vjuː/","n.","tổng quan","Let me give you a quick overview."],
+    ["increase","/ɪnˈkriːs/","v.","tăng","Sales increased by 15%.","increase BY + mức tăng thêm · increase TO + mức cuối cùng."],
+    ["decline","/dɪˈklaɪn/","n. / v.","sự sụt giảm; giảm","There was a slight decline in March."],
+    ["figures","/ˈfɪɡ.jɚz/","n.","số liệu","These figures are from the last quarter."],
+    ["quarter","/ˈkwɔːr.t̬ɚ/","n.","quý (3 tháng)","It was our best quarter so far."],
+    ["due to","/duː tuː/","prep.","do, vì","The drop was due to higher shipping costs.","Sau due to là danh từ, không phải mệnh đề."],
+    ["target","/ˈtɑːr.ɡɪt/","n.","chỉ tiêu, mục tiêu","We reached our target."],
+    ["significant","/sɪɡˈnɪf.ə.kənt/","adj.","đáng kể","That's a significant improvement."]],
+ g:{t:"Câu bị động trong báo cáo",intro:"Báo cáo tập trung vào kết quả chứ không phải ai làm. Vì vậy câu bị động xuất hiện rất nhiều.",
+  p:[["S + be + V3 (+ by …)","Nhấn mạnh việc được làm.","The campaign <b>was launched</b> in July."],
+     ["has / have been + V3","Bị động hiện tại hoàn thành: việc đã xong, kết quả còn liên quan.","Two new clients <b>have been signed</b>."],
+     ["will be + V3","Bị động tương lai: kế hoạch sắp tới.","The report <b>will be sent</b> on Friday."]],
+  m:["The project was finish last week.","The project was finished last week."],
+  ex:[["The new website ___ last month.",["was launched","launched by","has launch"],0,"Bị động quá khứ: was + V3."],
+      ["Three new stores ___ since January.",["have been opened","were opened","have opened by"],0,"Có since → bị động hiện tại hoàn thành."],
+      ["The results ___ to the board next week.",["will be presented","will present","are presenting by"],0,"Bị động tương lai: will be + V3."]]},
+ qs:[
+  {en:"Okay, let's start. How did we do this quarter?",vi:"Bắt đầu nhé. Quý này chúng ta làm thế nào?",o:[
+   ["Overall, quite well. Sales increased by 15%, so we reached our target.",1,"Kết luận trước, số liệu sau. “increase by” cho mức tăng."],["Sales increased to 15%.",0,"“to” chỉ mức cuối cùng; mức tăng thêm phải dùng “by”."],["Very good, very very good.",0,"Không có số liệu, thiếu thuyết phục."]],tip:"Kết luận → số liệu → lý do."},
+  {en:"Good. But what happened in March? The figures dropped.",vi:"Tốt. Nhưng tháng Ba có chuyện gì? Số liệu giảm.",o:[
+   ["There was a slight decline due to higher shipping costs.",1,"“due to + danh từ” giải thích nguyên nhân."],["Because shipping. Not my fault.",0,"Câu cụt và mang tính đổ lỗi."],["It was declined by March.",0,"Bị động dùng sai, nghĩa không rõ."]],tip:"due to + N = do, vì (văn phong trang trọng)."},
+  {en:"What's been done to fix that?",vi:"Chúng ta đã làm gì để khắc phục?",o:[
+   ["A new shipping partner has been chosen, and costs have already come down.",1,"Bị động hiện tại hoàn thành, đúng trọng tâm."],["We are fix it.",0,"Sai ngữ pháp."],["Many things was done.",0,"Sai hoà hợp chủ ngữ: things were."]],tip:"has / have been + V3 = đã được …"},
+  {en:"Great work. Can you send me the full report?",vi:"Làm tốt lắm. Gửi tôi báo cáo đầy đủ nhé?",o:[
+   ["Of course. It'll be sent to you by the end of the day.",1,"Bị động tương lai + mốc thời gian rõ ràng."],["I send now maybe.",0,"Sai thì và nghe không chắc chắn."],["You can find it somewhere.",0,"Thiếu chuyên nghiệp."]],tip:"by the end of the day = trước khi hết ngày."}]},
+
+{id:"NEG",place:"Đàm phán",icon:"⚖️",who:"🧔",name:"Supplier",ctx:"Bạn đàm phán giá với một nhà cung cấp.",
+ v:[["quote","/kwoʊt/","n.","bảng báo giá","Thanks for sending the quote."],
+    ["budget","/ˈbʌdʒ.ɪt/","n.","ngân sách","It's a bit over our budget."],
+    ["bulk order","/bʌlk ˈɔːr.dɚ/","n.","đơn hàng số lượng lớn","Do you offer discounts for bulk orders?"],
+    ["flexible","/ˈflek.sə.bəl/","adj.","linh hoạt","We can be flexible on the delivery date."],
+    ["compromise","/ˈkɑːm.prə.maɪz/","n. / v.","sự thoả hiệp; thoả hiệp","Let's find a compromise."],
+    ["terms","/tɝːmz/","n.","điều khoản","What are your payment terms?"],
+    ["in return","/ɪn rɪˈtɝːn/","phrase","đổi lại","In return, we'll sign a two-year contract."],
+    ["deal","/diːl/","n.","thoả thuận","It's a deal!"]],
+ g:{t:"Ngôn ngữ mềm khi đàm phán",intro:"Ở trình độ B2, bạn không chỉ nói đúng mà còn phải nói khéo. Ba công cụ dưới đây giúp đưa ra yêu cầu mà không làm mất lòng đối tác.",
+  p:[["Would it be possible to + V?","Đề nghị khéo léo, khó bị từ chối thẳng.","<b>Would it be possible to</b> lower the price?"],
+     ["a bit / slightly / rather + adj","Giảm độ gay gắt khi nói điều không vui.","The price is <b>slightly</b> higher than we expected."],
+     ["If you could …, we would …","Đề nghị có điều kiện: tôi nhượng bộ nếu bạn nhượng bộ.","<b>If you could</b> deliver by May, <b>we would</b> order 500 units."]],
+  m:["Your price is too expensive. Reduce it.","The price is a bit higher than our budget. Would it be possible to reduce it?"],
+  ex:[["___ to extend the deadline by a week?",["Would it be possible","Is it possible that you to","Could possible"],0,"Mẫu cố định: Would it be possible to + V?"],
+      ["The price is ___ higher than we expected.",["slightly","slight","very much too"],0,"Trạng từ slightly bổ nghĩa cho higher."],
+      ["If you ___ a 10% discount, we would sign today.",["could offer","will offer","can offering"],0,"If you could …, we would … (đề nghị có điều kiện)."]]},
+ qs:[
+  {en:"So, you've seen our quote. What do you think?",vi:"Anh/chị đã xem báo giá rồi. Thấy thế nào?",o:[
+   ["We like the product, but the price is a bit higher than our budget.",1,"Khen trước, nêu vấn đề sau, có từ làm mềm “a bit”."],["Your price is too expensive.",0,"“price” đi với high/low, không dùng expensive; câu cũng nghe gay gắt."],["It's okay.",0,"Bỏ lỡ cơ hội đàm phán."]],tip:"The price is high · The product is expensive."},
+  {en:"I understand. What did you have in mind?",vi:"Tôi hiểu. Anh/chị đang nghĩ đến mức nào?",o:[
+   ["Would it be possible to get a 10% discount for a bulk order?",1,"Con số cụ thể + lý do (đơn số lượng lớn)."],["Give us 50% off.",0,"Ra lệnh, con số phi thực tế."],["I have nothing in mind.",0,"Hiểu theo nghĩa đen, không dùng được."]],tip:"What did you have in mind? = Anh/chị định mức nào?"},
+  {en:"Ten percent is difficult for us. We could do six.",vi:"10% hơi khó với chúng tôi. Chúng tôi có thể giảm 6%.",o:[
+   ["If you could do eight, we'd sign a two-year contract in return.",1,"Đề nghị có điều kiện, hai bên cùng có lợi."],["Six percent is a joke.",0,"Xúc phạm đối tác."],["Okay, six, whatever.",0,"Chấp nhận quá dễ và thiếu chuyên nghiệp."]],tip:"in return = đổi lại · If you could …, we'd …"},
+  {en:"Eight percent with a two-year contract... Okay, I think we can work with that.",vi:"8% với hợp đồng hai năm... Được, tôi nghĩ chúng ta làm được.",o:[
+   ["Great, it's a deal. I'll send over the contract terms this afternoon.",1,"Chốt thoả thuận + bước tiếp theo rõ ràng."],["Finally! You took so long.",0,"Gây mất thiện cảm vào phút cuối."],["Deal is good for me very.",0,"Sai trật tự từ."]],tip:"send over = gửi sang (cho đối tác)."}]},
+
+{id:"OPN",place:"Nêu quan điểm",icon:"💬",who:"👩",name:"Friend",ctx:"Bạn kể với bạn thân về tin mới ở công ty và nêu quan điểm.",
+ v:[["mention","/ˈmen.ʃən/","v.","nhắc đến","She mentioned that the office is moving."],
+    ["explain","/ɪkˈspleɪn/","v.","giải thích","He explained why he was late.","explain something TO someone, không nói “explain me”."],
+    ["hybrid","/ˈhaɪ.brɪd/","adj.","kết hợp (vừa ở nhà vừa lên văn phòng)","We're moving to a hybrid schedule."],
+    ["remote work","/rɪˈmoʊt wɝːk/","n.","làm việc từ xa","Remote work saves a lot of time."],
+    ["productive","/prəˈdʌk.tɪv/","adj.","năng suất","I'm more productive at home."],
+    ["on the other hand","/ɑːn ði ˈʌð.ɚ hænd/","phrase","mặt khác","On the other hand, I'd miss my colleagues."],
+    ["in my opinion","/ɪn maɪ əˈpɪn.jən/","phrase","theo ý tôi","In my opinion, a hybrid model is best."],
+    ["make sense","/meɪk sens/","phrase","hợp lý","That makes sense."]],
+ g:{t:"Câu tường thuật (reported speech)",intro:"Kể lại lời người khác là kỹ năng B2 quan trọng. Nguyên tắc chính: lùi thì và chọn đúng say / tell / ask.",
+  p:[["S + said (that) + S + V (lùi thì)","Hiện tại → quá khứ, will → would, can → could.","“I <b>am</b> busy.” → She said she <b>was</b> busy."],
+     ["told + người nghe + (that) …","“tell” phải có người nghe ngay sau; “say” thì không.","He <b>told me</b> that he <b>would</b> quit."],
+     ["asked + if / từ để hỏi + S + V","Tường thuật câu hỏi: dùng trật tự câu khẳng định.","“Do you like it?” → She asked <b>if I liked</b> it."]],
+  m:["He said me that he is tired.","He told me (that) he was tired."],
+  ex:[["“I will call you.” → She said she ___ call me.",["would","will","can"],0,"will → would khi tường thuật."],
+      ["My manager ___ me that the meeting was cancelled.",["told","said","spoke"],0,"Có người nghe “me” ngay sau → told."],
+      ["“Are you free?” → He asked ___ free.",["if I was","was I","if was I"],0,"Câu hỏi yes/no → asked if + S + V."]]},
+ qs:[
+  {en:"Hey! How was work today? You look like you have news.",vi:"Ê! Hôm nay đi làm thế nào? Trông như có tin gì vậy.",o:[
+   ["Yeah! My manager mentioned that we might move to a hybrid schedule.",1,"Tường thuật bằng mentioned that + might."],["My manager said me we move hybrid.",0,"“said me” sai, phải là “told me”."],["Nothing special happened, except everything.",0,"Mâu thuẫn, khó hiểu."]],tip:"mention that … = nhắc đến rằng …"},
+  {en:"Really? What exactly did she say?",vi:"Thật à? Chính xác chị ấy nói gì?",o:[
+   ["She told us that we would work from home two days a week.",1,"told + us, lùi thì will → would."],["She told that we will work from home.",0,"“told” cần người nghe; và nên lùi thì."],["She say many thing.",0,"Sai ngữ pháp, không trả lời câu hỏi."]],tip:"tell sb that … · say that …"},
+  {en:"Do you think that's a good idea?",vi:"Cậu thấy ý đó có hay không?",o:[
+   ["In my opinion, yes. I'm more productive at home. On the other hand, I'd miss seeing everyone.",1,"Quan điểm + lý do + mặt trái. Lập luận cân bằng kiểu B2."],["Yes. Good. Very good idea.",0,"Không có lý lẽ."],["In my opinion, I think, maybe I believe yes.",0,"Chồng chéo nhiều cụm nêu ý kiến."]],tip:"In my opinion … On the other hand …"},
+  {en:"That makes sense. Did anyone complain?",vi:"Hợp lý đấy. Có ai phàn nàn không?",o:[
+   ["Just Tom. He asked if he could keep coming in every day.",1,"Tường thuật câu hỏi: asked if + S + could."],["Tom asked can he come every day.",0,"Sai trật tự câu hỏi gián tiếp."],["Complain is normal for Tom.",0,"Không trả lời rõ."]],tip:"asked if + S + V = hỏi liệu …"}]}
+];
+
+const LEVELS=[
+ {id:"A2",name:"A2",tag:"Sinh tồn",desc:"Du lịch, mua sắm, làm quen",hideVi:false,stops:A2},
+ {id:"B1",name:"B1",tag:"Tự tin",desc:"Phỏng vấn, khám bệnh, điện thoại",hideVi:true,stops:B1},
+ {id:"BP",name:"B+",tag:"Công sở",desc:"Họp, báo cáo, đàm phán, tranh luận",hideVi:true,stops:BP}
+];
+const ALL=LEVELS.flatMap(l=>l.stops);
+const TOTAL_W=ALL.reduce((n,s)=>n+s.v.length,0);
+
+/* ===== TRẠNG THÁI ===== */
+const KEY="speakup-v3";
+const fresh=()=>({level:0,stop:0,tab:"vocab",score:0,streak:0,best:{},learned:{},gram:{},hide:false});
+let S=fresh();
+try{const s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem("speakup-v2")||"null");if(s)S=Object.assign(fresh(),s)}catch(e){}
+if(!LEVELS[S.level])S.level=0;
+function cur(){return LEVELS[S.level].stops}
+let showVi=false;
+let T={q:0,correct:0,answered:false,result:false,order:[]};          // hội thoại
+let G={};                                                             // ngữ pháp: index -> lựa chọn
+let R=null;                                                           // kiểm tra từ
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const wkey=(st,w)=>st.id+":"+w[0];
+/* ===== ÂM THANH ===== */
+const TTS=("speechSynthesis" in window)&&("SpeechSynthesisUtterance" in window);
+const HINT="Hãy tăng âm lượng, tắt chế độ im lặng (iPhone: gạt nút bên hông máy), hoặc thử chọn giọng khác. Chrome, Edge và Safari phát âm tốt nhất.";
+let VOICES=[],voiceName="",rateMul=1,speakTimer,checkTimer;
+try{voiceName=localStorage.getItem("speakup-voice")||"";rateMul=+(localStorage.getItem("speakup-rate")||1)}catch(e){}
+function soundMsg(t){const el=document.getElementById("sndmsg");if(el){el.textContent=t;el.hidden=!t}}
+function loadVoices(){if(!TTS)return;try{const all=speechSynthesis.getVoices()||[];VOICES=all.filter(v=>/^en([-_]|$)/i.test(v.lang));renderVoicePick()}catch(e){}}
+function pickVoice(){
+  if(!VOICES.length)return null;
+  return VOICES.find(v=>v.name===voiceName)
+   ||VOICES.find(v=>/en[-_]US/i.test(v.lang)&&/Google|Samantha|Aria|Jenny|Natural|Ava|Guy/i.test(v.name))
+   ||VOICES.find(v=>/en[-_]US/i.test(v.lang))||VOICES.find(v=>/en[-_]GB/i.test(v.lang))||VOICES[0];
+}
+function renderVoicePick(){
+  const sel=document.getElementById("voice");if(!sel)return;
+  if(!TTS){sel.innerHTML=`<option>Không hỗ trợ</option>`;sel.disabled=true;return}
+  if(!VOICES.length){sel.innerHTML=`<option>Giọng mặc định</option>`;return}
+  const cur=pickVoice();
+  sel.innerHTML=VOICES.map(v=>`<option value="${esc(v.name)}" ${cur&&v.name===cur.name?"selected":""}>${esc(v.name.replace(/^(Microsoft|Google)\s*/,""))} · ${esc(v.lang)}</option>`).join("");
+}
+function doSpeak(text,rate){
+  const parts=text.length>160?text.split(/(?<=[.!?])\s+/):[text];
+  const v=pickVoice();let started=false;
+  parts.forEach((p,i)=>{
+    const u=new SpeechSynthesisUtterance(p);
+    if(v){u.voice=v;u.lang=v.lang}else u.lang="en-US";
+    u.rate=Math.max(.4,Math.min(1.4,(rate||.9)*rateMul));u.volume=1;
+    if(i===0)u.onstart=()=>{started=true;soundMsg("")};
+    u.onerror=e=>{if(e&&e.error&&e.error!=="interrupted"&&e.error!=="canceled")soundMsg("Không phát được âm thanh ("+e.error+"). "+HINT)};
+    speechSynthesis.speak(u);
+  });
+  try{speechSynthesis.resume()}catch(e){}
+  clearTimeout(checkTimer);
+  checkTimer=setTimeout(()=>{if(!started&&!speechSynthesis.speaking)soundMsg("Chưa phát được âm thanh. "+HINT)},3000);
+}
+function speak(t,rate){
+  if(!TTS){soundMsg("Trình duyệt này không hỗ trợ đọc tiếng Anh. Hãy mở game bằng Chrome, Edge hoặc Safari.");return}
+  const text=String(t).replace(/\(.*?\)/g,"").replace(/\s+/g," ").trim();if(!text)return;
+  try{
+    if(!VOICES.length)loadVoices();
+    clearTimeout(speakTimer);
+    if(speechSynthesis.speaking||speechSynthesis.pending){
+      speechSynthesis.cancel();
+      speakTimer=setTimeout(()=>{try{doSpeak(text,rate)}catch(e){soundMsg("Không phát được âm thanh. "+HINT)}},120);
+    }else doSpeak(text,rate);
+  }catch(e){soundMsg("Không phát được âm thanh. "+HINT)}
+}
+if(TTS){loadVoices();try{if(speechSynthesis.addEventListener)speechSynthesis.addEventListener("voiceschanged",loadVoices);else speechSynthesis.onvoiceschanged=loadVoices}catch(e){}setTimeout(loadVoices,800)}
+function award(n){S.streak++;S.score+=n+Math.min(S.streak-1,5)*2}
+
+const TABS=[["vocab","Từ vựng","01"],["grammar","Ngữ pháp","02"],["talk","Hội thoại","03"],["review","Kiểm tra từ","04"]];
+
+function goLevel(l){S.level=l;goStop(0)}
+function goStop(i,tab){S.stop=i;showVi=false;S.tab=tab||"vocab";T={q:0,correct:0,answered:false,result:false,order:[]};G={};R=null;save();render()}
+function goTab(t){S.tab=t;if(t==="talk"&&T.result){}if(t==="review")R=null;if(t==="grammar")G={};save();render();try{$("tabs").scrollIntoView({block:"nearest"})}catch(e){}}
+
+function renderTop(){
+  $("levels").innerHTML=LEVELS.map((l,i)=>{const got=l.stops.filter(s=>S.best[s.id]>=3).length;
+    return `<button type="button" class="lv ${i===S.level?"on":""}" data-l="${i}" aria-pressed="${i===S.level}"><span class="lv-n">${l.name}</span><span class="lv-t">${l.tag}</span><span class="lv-d">${l.desc}</span><span class="lv-p"><i style="width:${got/l.stops.length*100}%"></i></span><span class="lv-c">${got}/${l.stops.length} tem</span></button>`}).join("");
+  $("levels").querySelectorAll(".lv").forEach(b=>b.onclick=()=>goLevel(+b.dataset.l));
+  $("route").style.setProperty("--n",cur().length);
+  $("route").innerHTML=cur().map((s,i)=>{const c=["stop"];if(i===S.stop)c.push("on");if(S.best[s.id]!=null)c.push(S.best[s.id]>=3?"stamped":"done");
+    return `<button class="${c.join(" ")}" data-i="${i}" type="button" aria-label="${s.place}"><span class="dot">${s.icon}</span><span class="lbl">${s.place}</span></button>`}).join("");
+  $("route").querySelectorAll(".stop").forEach(b=>b.onclick=()=>goStop(+b.dataset.i));
+  $("score").textContent=S.score;$("streak").textContent=S.streak;
+  $("stamps").textContent=ALL.filter(s=>S.best[s.id]>=3).length;
+  $("words").textContent=ALL.reduce((n,s)=>n+s.v.filter(w=>S.learned[wkey(s,w)]).length,0);
+  const st=cur()[S.stop];
+  $("place").textContent=st.icon+" "+st.place;
+  const lw=st.v.filter(w=>S.learned[wkey(st,w)]).length;
+  $("code").textContent=LEVELS[S.level].name+" · STOP "+(S.stop+1)+"/"+cur().length+" · "+lw+"/"+st.v.length+" TỪ";
+  $("tabs").innerHTML=TABS.map(([k,l,n])=>`<button class="tab" role="tab" type="button" data-t="${k}" aria-selected="${S.tab===k}"><small>${n}</small>${l}</button>`).join("");
+  $("tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>goTab(b.dataset.t));
+}
+function render(){renderTop();({vocab:renderVocab,grammar:renderGrammar,talk:renderTalk,review:renderReview})[S.tab]()}
+function setBar(p){$("bar").style.width=p+"%"}
+
+/* ===== 1. TỪ VỰNG ===== */
+function renderVocab(){
+  const st=cur()[S.stop];
+  const lw=st.v.filter(w=>S.learned[wkey(st,w)]).length;setBar(lw/8*100);
+  $("body").innerHTML=`
+   <div class="row"><p class="ctx"><b>8 từ cho tình huống “${esc(st.place)}”.</b> Nghe, đọc to theo ví dụ, rồi đánh dấu từ bạn đã thuộc.</p>
+    <label class="toggle"><input type="checkbox" id="hide" ${S.hide?"checked":""}> Che nghĩa để tự kiểm tra</label></div>
+   <div class="cards">${st.v.map((w,i)=>{const L=S.learned[wkey(st,w)];return `
+    <article class="card ${L?"learned":""}">
+      <div class="top"><span class="w">${esc(w[0])}</span><span class="pos">${esc(w[2])}</span></div>
+      <span class="ipa">${esc(w[1])}</span>
+      ${S.hide?`<button class="reveal" type="button" data-r="${i}">Chạm để xem nghĩa</button>`:`<span class="mean">${esc(w[3])}</span>`}
+      <p class="ex">“${esc(w[4])}”</p>
+      ${w[5]?`<p class="note">💡 ${esc(w[5])}</p>`:""}
+      <div class="acts"><button type="button" data-s="${i}">🔊 Từ</button><button type="button" data-e="${i}">🔊 Câu ví dụ</button><button type="button" class="mark" data-m="${i}">${L?"✓ Đã thuộc":"Đánh dấu đã thuộc"}</button></div>
+    </article>`}).join("")}</div>
+   <div class="row"><span class="ctx">Đã thuộc ${lw}/8 từ.</span><button class="btn primary" id="nx" type="button">Học ngữ pháp →</button></div>`;
+  $("hide").onchange=e=>{S.hide=e.target.checked;save();renderVocab()};
+  const B=$("body");
+  B.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{b.outerHTML=`<span class="mean">${esc(st.v[+b.dataset.r][3])}</span>`});
+  B.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>speak(st.v[+b.dataset.s][0],.8));
+  B.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>speak(st.v[+b.dataset.e][4]));
+  B.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{const k=wkey(st,st.v[+b.dataset.m]);if(S.learned[k])delete S.learned[k];else S.learned[k]=1;save();renderTop();renderVocab()});
+  $("nx").onclick=()=>goTab("grammar");
+}
+
+/* ===== 2. NGỮ PHÁP ===== */
+function renderGrammar(){
+  const st=cur()[S.stop],g=st.g;
+  const done=Object.keys(G).filter(x=>!isNaN(x)).length;setBar(done/g.ex.length*100);
+  $("body").innerHTML=`
+   <div class="rule"><h2>${esc(g.t)}</h2><p class="ctx">${esc(g.intro)}</p>
+    <ul>${g.p.map(p=>`<li><span class="formula">${esc(p[0])}</span><div>${p[1]}</div><span class="eg">Ví dụ: ${p[2]}</span></li>`).join("")}</ul></div>
+   <div class="mistake"><div class="x"><span>✗ LỖI HAY GẶP</span>${esc(g.m[0])}</div><div class="v"><span>✓ NÓI THẾ NÀY</span>${esc(g.m[1])}</div></div>
+   <div class="ex-list"><p class="q" style="margin:0">Luyện tập: điền vào chỗ trống</p>
+    ${g.ex.map((e,i)=>{const picked=G[i];const ans=picked!=null;
+      const fill=ans?`<span class="blank">${esc(e[1][e[2]])}</span>`:`<span class="blank">&nbsp;</span>`;
+      const opts=ans?e[1].map((o,k)=>({o,k})):(G["o"+i]||(G["o"+i]=shuffle(e[1].map((o,k)=>({o,k})))));
+      return `<div class="ex-item"><p>${i+1}. ${esc(e[0]).replace("___",fill)}</p>
+       <div class="chips">${opts.map(({o,k})=>`<button type="button" data-i="${i}" data-k="${k}" ${ans?"disabled":""} class="${ans?(k===e[2]?"ok":k===picked?"no":""):""}">${esc(o)}</button>`).join("")}</div>
+       ${ans?`<div class="why">${picked===e[2]?"✓ Đúng rồi! ":"✗ Chưa đúng. "}${esc(e[3])}</div>`:""}</div>`}).join("")}
+   </div>
+   <div class="row"><button class="btn" id="say" type="button">🔊 Nghe các ví dụ</button><button class="btn primary" id="nx" type="button">Luyện hội thoại →</button></div>`;
+  $("body").querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i,k=+b.dataset.k,e=g.ex[i];if(G[i]!=null)return;G[i]=k;
+    if(k===e[2])award(5);else S.streak=0;
+    const right=Object.keys(G).filter(x=>!isNaN(x)&&G[x]===g.ex[x][2]).length;
+    S.gram[st.id]=Math.max(S.gram[st.id]||0,right);
+    speak(e[0].replace("___",e[1][e[2]]));save();renderTop();renderGrammar();
+  });
+  $("say").onclick=()=>speak(g.p.map(p=>p[2].replace(/<[^>]+>/g,"").replace(/→/g,". ")).join(". "));
+  $("nx").onclick=()=>goTab("talk");
+}
+
+/* ===== 3. HỘI THOẠI ===== */
+function markVocab(st,text){
+  let h=esc(text);
+  st.v.slice().sort((a,b)=>b[0].length-a[0].length).forEach(w=>{
+    const re=new RegExp("\\b("+w[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")\\b","i");
+    h=h.replace(re,m=>`<span class="vw" title="${esc(w[3])}">${m}</span>`);
+  });
+  return h;
+}
+function renderTalk(){
+  const st=cur()[S.stop];
+  setBar(T.result?100:T.q/4*100);
+  if(T.result)return renderResult(st);
+  const q=st.qs[T.q];
+  if(!T.answered)T.order=shuffle([0,1,2]);
+  $("body").innerHTML=`
+   <p class="ctx"><b>Tình huống ${T.q+1}/4.</b> ${esc(st.ctx)} Từ gạch chân vàng là từ vừa học, giữ chuột để xem nghĩa.</p>
+   <div class="bubble"><div class="who" aria-hidden="true">${st.who}</div>
+    <div class="say"><div class="name">${esc(st.name)}</div><p class="en">${markVocab(st,q.en)}</p>${(LEVELS[S.level].hideVi&&!showVi&&!T.answered)?"":`<p class="vi">${esc(q.vi)}</p>`}</div></div>
+   <div class="tools"><button class="btn" id="listen" type="button">🔊 Nghe</button><button class="btn" id="slow" type="button">🐢 Nghe chậm</button>${LEVELS[S.level].hideVi?`<button class="btn" id="vi" type="button">${showVi?"Ẩn bản dịch":"Hiện bản dịch"}</button>`:""}</div>
+   <p class="q">Bạn sẽ nói gì?</p>
+   <div class="opts" id="opts">${T.order.map((k,n)=>`<button class="opt" type="button" data-k="${k}"><span class="k">${n+1}</span><span class="tx">${markVocab(st,q.o[k][0])}</span></button>`).join("")}</div>
+   <div id="fb"></div>`;
+  $("listen").onclick=()=>speak(q.en);
+  $("slow").onclick=()=>speak(q.en,.6);
+  if($("vi"))$("vi").onclick=()=>{showVi=!showVi;renderTalk()};
+  $("opts").querySelectorAll(".opt").forEach(b=>b.onclick=()=>answerTalk(+b.dataset.k));
+}
+function answerTalk(k){
+  if(T.answered)return;T.answered=true;
+  const st=cur()[S.stop],q=st.qs[T.q],ok=q.o[k][1]===1;
+  if(ok){T.correct++;award(10)}else S.streak=0;
+  const sayEl=document.querySelector(".say");if(sayEl&&!sayEl.querySelector(".vi"))sayEl.insertAdjacentHTML("beforeend",`<p class="vi">${esc(q.vi)}</p>`);
+  $("opts").querySelectorAll(".opt").forEach(b=>{const kk=+b.dataset.k,o=q.o[kk];b.disabled=true;
+    if(o[1])b.classList.add("ok");else if(kk===k)b.classList.add("no");
+    if(o[1]||kk===k)b.querySelector(".tx").insertAdjacentHTML("beforeend",`<span class="why">${o[1]?"✓":"✗"} ${esc(o[2])}</span>`)});
+  const right=q.o.find(o=>o[1])[0];
+  $("fb").innerHTML=`<div class="feedback"><span class="tip">${ok?"CHUẨN RỒI!":"GHI NHỚ"}</span>${esc(q.tip)}</div>
+   <div class="row" style="margin-top:12px"><button class="btn" id="say2" type="button">🔊 Nghe câu đúng</button><button class="btn primary" id="go" type="button">${T.q<3?"Tiếp →":"Xem kết quả →"}</button></div>`;
+  $("say2").onclick=()=>speak(right);$("go").onclick=nextTalk;$("go").focus();
+  speak(right);renderTop();save();
+}
+function nextTalk(){T.answered=false;if(T.q<3)T.q++;else{const st=cur()[S.stop];S.best[st.id]=Math.max(S.best[st.id]||0,T.correct);T.result=true}save();render()}
+function renderResult(st){
+  const pass=T.correct>=3;
+  $("body").innerHTML=`<div class="result">
+    <div class="stamp ${pass?"":"miss"}">${pass?esc(st.place)+"<br>✓ passed":"Thử lại<br>nhé"}</div>
+    <h2>${T.correct}/4 câu chuẩn</h2>
+    <p class="ctx">${pass?"Bạn đã nhận tem ở điểm dừng này. Làm bài kiểm tra từ để chốt lại vốn từ nhé.":"Cần ít nhất 3/4 để nhận tem. Ôn lại mẫu câu bên dưới rồi thử lần nữa."}</p>
+    <div class="tools" style="justify-content:center"><button class="btn" id="again" type="button">↺ Luyện lại hội thoại</button><button class="btn primary" id="nx" type="button">Kiểm tra từ →</button></div>
+    <div class="phrasebook"><h3>Sổ tay mẫu câu · ${esc(st.place)}</h3><ul>
+     ${st.qs.map(q=>`<li><span class="en2">${esc(q.o.find(o=>o[1])[0])}</span><span class="vi2">${esc(q.tip)}</span></li>`).join("")}</ul></div></div>`;
+  $("again").onclick=()=>{T={q:0,correct:0,answered:false,result:false,order:[]};render()};
+  $("nx").onclick=()=>goTab("review");
+}
+
+/* ===== 4. KIỂM TRA TỪ ===== */
+function buildReview(st){
+  const pool=cur().flatMap(s=>s.v);
+  return shuffle(st.v).slice(0,6).map((w,i)=>{
+    const mode=i%2?"listen":"mean";
+    const wrong=shuffle(st.v.filter(x=>x!==w)).slice(0,2).concat(shuffle(pool.filter(x=>!st.v.includes(x))).slice(0,1));
+    return {w,mode,opts:shuffle([w,...wrong]),picked:null};
+  });
+}
+function renderReview(){
+  const st=cur()[S.stop];
+  if(!R)R={items:buildReview(st),i:0,correct:0};
+  setBar(R.i/R.items.length*100);
+  if(R.i>=R.items.length){
+    setBar(100);
+    $("body").innerHTML=`<div class="result"><h2>${R.correct}/${R.items.length} từ đúng</h2>
+      <p class="ctx">Từ bạn trả lời đúng đã được đánh dấu là đã thuộc.${R.correct<R.items.length?" Quay lại thẻ từ để ôn những từ còn sai.":""}</p>
+      <div class="tools" style="justify-content:center"><button class="btn" id="again" type="button">↺ Làm lại</button><button class="btn" id="back" type="button">Xem lại thẻ từ</button>
+      ${S.stop<cur().length-1?`<button class="btn primary" id="nx" type="button">Điểm dừng tiếp theo →</button>`:(S.level<LEVELS.length-1?`<button class="btn primary" id="nl" type="button">Lên cấp ${LEVELS[S.level+1].name} →</button>`:"")}</div></div>`;
+    $("again").onclick=()=>{R=null;renderReview()};
+    $("back").onclick=()=>goTab("vocab");
+    if($("nx"))$("nx").onclick=()=>goStop(S.stop+1);
+    if($("nl"))$("nl").onclick=()=>goLevel(S.level+1);
+    return;
+  }
+  const it=R.items[R.i];
+  $("body").innerHTML=`
+   <p class="ctx"><b>Câu ${R.i+1}/${R.items.length}.</b> ${it.mode==="mean"?"Chọn từ tiếng Anh đúng với nghĩa này:":"Nghe và chọn từ bạn nghe được:"}</p>
+   ${it.mode==="mean"?`<p class="big-q">“${esc(it.w[3])}”</p>`:`<div class="tools"><button class="btn primary" id="play" type="button">🔊 Phát âm</button><button class="btn" id="play2" type="button">🐢 Chậm</button></div>`}
+   <div class="opts" id="opts">${it.opts.map((w,n)=>`<button class="opt" type="button" data-n="${n}"><span class="k">${n+1}</span><span class="tx"><b>${esc(w[0])}</b> <span style="color:var(--muted);font-family:var(--f-mono);font-size:13px">${esc(w[1])}</span></span></button>`).join("")}</div>
+   <div id="fb"></div>`;
+  if(it.mode==="listen"){$("play").onclick=()=>speak(it.w[0],.8);$("play2").onclick=()=>speak(it.w[0],.5)}
+  $("opts").querySelectorAll(".opt").forEach(b=>b.onclick=()=>answerReview(+b.dataset.n));
+}
+function answerReview(n){
+  const st=cur()[S.stop],it=R.items[R.i];if(it.picked!=null)return;it.picked=n;
+  const ok=it.opts[n]===it.w;
+  if(ok){R.correct++;award(5);S.learned[wkey(st,it.w)]=1}else S.streak=0;
+  $("opts").querySelectorAll(".opt").forEach(b=>{const k=+b.dataset.n;b.disabled=true;if(it.opts[k]===it.w)b.classList.add("ok");else if(k===n)b.classList.add("no")});
+  $("fb").innerHTML=`<div class="feedback"><span class="tip">${ok?"CHÍNH XÁC!":"GHI NHỚ"}</span><b>${esc(it.w[0])}</b> ${esc(it.w[1])} = ${esc(it.w[3])}<br><i>“${esc(it.w[4])}”</i></div>
+   <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="btn primary" id="go" type="button">Tiếp →</button></div>`;
+  speak(it.w[0],.85);
+  $("go").onclick=()=>{R.i++;renderReview()};$("go").focus();
+  save();renderTop();
+}
+
+/* ===== PHÍM TẮT ===== */
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"||(e.target.tagName==="BUTTON"&&e.key==="Enter"))return;
+  const n=+e.key;
+  if(S.tab==="talk"&&!T.result){
+    if(n>=1&&n<=3&&!T.answered)answerTalk(T.order[n-1]);
+    else if(e.key==="Enter"&&T.answered&&$("go")){e.preventDefault();nextTalk()}
+  }else if(S.tab==="review"&&R&&R.i<R.items.length){
+    const it=R.items[R.i];
+    if(n>=1&&n<=it.opts.length&&it.picked==null)answerReview(n-1);
+    else if(e.key==="Enter"&&it.picked!=null){e.preventDefault();R.i++;renderReview()}
+  }
+});
+$("sndtest").onclick=()=>{soundMsg("");speak("Hello! If you can hear this, the sound is working.")};
+$("voice").onchange=e=>{voiceName=e.target.value;try{localStorage.setItem("speakup-voice",voiceName)}catch(_){}speak("This is my voice.")};
+$("rate").value=String(rateMul);if(!$("rate").value)$("rate").value="1";
+$("rate").onchange=e=>{rateMul=+e.target.value;try{localStorage.setItem("speakup-rate",rateMul)}catch(_){}speak("Practice makes perfect.")};
+renderVoicePick();
+$("reset").onclick=()=>{S=fresh();showVi=false;T={q:0,correct:0,answered:false,result:false,order:[]};G={};R=null;save();render()};
+render();
+</script>
+
+<script>if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
+</body>
+</html>
